@@ -8,8 +8,9 @@
 package pushreceiver
 
 import (
-	pb "github.com/crow-misia/go-push-receiver/pb/mcs"
 	"time"
+
+	pb "github.com/crow-misia/go-push-receiver/pb/mcs"
 )
 
 // Event type.
@@ -54,14 +55,14 @@ type MessageEvent struct {
 	Data         []byte `json:"data"`
 }
 
-func newMessageEvent(data *pb.DataMessageStanza, bytes []byte) *MessageEvent {
+func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
 	return &MessageEvent{
 		PersistentID: data.GetPersistentId(),
 		From:         data.GetFrom(),
 		To:           data.GetTo(),
 		TTL:          data.GetTtl(),
 		Sent:         data.GetSent(),
-		Data:         bytes,
+		Data:         data.GetRawData(),
 	}
 }
 
