@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	pb "github.com/crow-misia/go-push-receiver/pb/checkin"
+	pb "github.com/beeper/push-receiver/pb/checkin"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )

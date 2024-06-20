@@ -10,7 +10,7 @@ package pushreceiver
 import (
 	"time"
 
-	pb "github.com/crow-misia/go-push-receiver/pb/mcs"
+	pb "github.com/beeper/push-receiver/pb/mcs"
 )
 
 // Event type.

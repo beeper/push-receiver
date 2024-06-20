@@ -1,4 +1,4 @@
-module github.com/crow-misia/go-push-receiver
+module github.com/beeper/push-receiver
 
 go 1.21
 

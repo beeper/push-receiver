@@ -12,7 +12,7 @@ import (
 	"crypto/tls"
 	"time"
 
-	pb "github.com/crow-misia/go-push-receiver/pb/mcs"
+	pb "github.com/beeper/push-receiver/pb/mcs"
 	"github.com/pkg/errors"
 )
 
