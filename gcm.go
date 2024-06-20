@@ -19,10 +19,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RegisterGCM(ctx context.Context, creds GCMCredentials) (*FCMCredentials, error) {
-	appID := uuid.New().String()
+type GCMRegistrationOpts struct {
+	AppID      string
+	InstanceID string
+}
 
+func RegisterGCM(ctx context.Context, creds GCMCredentials, opts *GCMRegistrationOpts) (*FCMCredentials, error) {
 	values := url.Values{}
+
+	var appID string
+	if opts != nil {
+		appID = opts.AppID
+		values.Set("appId", opts.InstanceID)
+	} else {
+		appID = uuid.New().String()
+	}
+
 	values.Set("app", "org.chromium.linux")
 	values.Set("scope", "GCM")
 	values.Set("X-scope", "GCM")

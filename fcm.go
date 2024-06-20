@@ -72,7 +72,7 @@ func (c *Client) register(ctx context.Context) error {
 		return err
 	}
 
-	creds, err := RegisterGCM(ctx, *gcmCreds)
+	creds, err := RegisterGCM(ctx, *gcmCreds, nil)
 	if err != nil {
 		return err
 	}
