@@ -24,6 +24,8 @@ func RegisterGCM(ctx context.Context, creds GCMCredentials) (*FCMCredentials, er
 
 	values := url.Values{}
 	values.Set("app", "org.chromium.linux")
+	values.Set("scope", "GCM")
+	values.Set("X-scope", "GCM")
 	values.Set("X-subtype", appID)
 	values.Set("device", fmt.Sprint(creds.AndroidID))
 	values.Set("sender", fcmServerKey)
