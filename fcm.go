@@ -72,17 +72,9 @@ func (c *Client) register(ctx context.Context) error {
 		return err
 	}
 
-	response, err := RegisterGCM(ctx, *gcmCreds)
+	creds, err := RegisterGCM(ctx, *gcmCreds)
 	if err != nil {
 		return err
-	}
-	creds := &FCMCredentials{
-		GCM: GCMCredentials{
-			AndroidID:     response.androidID,
-			SecurityToken: response.securityToken,
-		},
-		AppID: response.appID,
-		Token: response.token,
 	}
 	c.creds = creds
 	c.Events <- &UpdateCredentialsEvent{creds}

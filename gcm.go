@@ -19,14 +19,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type GCMRegisterResponse struct {
-	token         string
-	androidID     uint64
-	securityToken uint64
-	appID         string
-}
-
-func RegisterGCM(ctx context.Context, creds GCMCredentials) (*GCMRegisterResponse, error) {
+func RegisterGCM(ctx context.Context, creds GCMCredentials) (*FCMCredentials, error) {
 	appID := fmt.Sprintf("wp:receiver.push.com#%s", uuid.New())
 
 	values := url.Values{}
@@ -55,10 +48,9 @@ func RegisterGCM(ctx context.Context, creds GCMCredentials) (*GCMRegisterRespons
 	}
 	token := subscription.Get("token")
 
-	return &GCMRegisterResponse{
-		token:         token,
-		androidID:     creds.AndroidID,
-		securityToken: creds.SecurityToken,
-		appID:         appID,
+	return &FCMCredentials{
+		GCM:   creds,
+		Token: token,
+		AppID: appID,
 	}, nil
 }
