@@ -28,8 +28,7 @@ type GCMCredentials struct {
 	SecurityToken uint64 `json:"securityToken"`
 }
 
-// Subscribe subscribe to FCM.
-func (c *MCSClient) Subscribe(ctx context.Context) {
+func (c *MCSClient) Listen(ctx context.Context) {
 	defer close(c.Events)
 
 	for ctx.Err() == nil {

@@ -62,7 +62,7 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 		pr.WithReceivedPersistentID(persistentIDs),
 	)
 
-	go mcsClient.Subscribe(ctx)
+	go mcsClient.Listen(ctx)
 
 	for event := range mcsClient.Events {
 		switch ev := event.(type) {
