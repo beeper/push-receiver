@@ -20,7 +20,7 @@ import (
 )
 
 func RegisterGCM(ctx context.Context, creds GCMCredentials) (*FCMCredentials, error) {
-	appID := fmt.Sprintf("wp:receiver.push.com#%s", uuid.New())
+	appID := uuid.New().String()
 
 	values := url.Values{}
 	values.Set("app", "org.chromium.linux")
