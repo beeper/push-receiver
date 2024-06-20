@@ -28,6 +28,7 @@ func RegisterGCM(ctx context.Context, creds GCMCredentials) (*FCMCredentials, er
 	values.Set("X-scope", "GCM")
 	values.Set("X-subtype", appID)
 	values.Set("device", fmt.Sprint(creds.AndroidID))
+	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
 	values.Set("sender", fcmServerKey)
 
 	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
