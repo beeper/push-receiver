@@ -37,7 +37,7 @@ func (c *Client) Subscribe(ctx context.Context) {
 		if c.creds == nil {
 			err = c.register(ctx)
 		} else {
-			_, err = c.checkIn(ctx, &checkInOption{c.creds.GCM.AndroidID, c.creds.GCM.SecurityToken})
+			_, err = CheckIn(ctx, &c.creds.GCM)
 		}
 		if err == nil {
 			// reset retry count when connection success
