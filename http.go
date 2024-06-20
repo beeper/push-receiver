@@ -21,3 +21,9 @@ func postRequest(ctx context.Context, url string, body io.Reader, headerSetter f
 	client := &http.Client{}
 	return client.Do(req)
 }
+
+func closeResponse(res *http.Response) error {
+	defer res.Body.Close()
+	_, err := io.Copy(io.Discard, res.Body)
+	return err
+}
