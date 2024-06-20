@@ -29,7 +29,7 @@ type GCMCredentials struct {
 }
 
 // Subscribe subscribe to FCM.
-func (c *Client) Subscribe(ctx context.Context) {
+func (c *MCSClient) Subscribe(ctx context.Context) {
 	defer close(c.Events)
 
 	for ctx.Err() == nil {
@@ -58,7 +58,7 @@ func (c *Client) Subscribe(ctx context.Context) {
 	}
 }
 
-func (c *Client) tryToConnect(ctx context.Context) error {
+func (c *MCSClient) tryToConnect(ctx context.Context) error {
 	conn, err := tls.DialWithDialer(c.dialer, "tcp", mtalkServer, c.tlsConfig)
 	if err != nil {
 		return errors.Wrap(err, "dial failed to FCM")
@@ -84,7 +84,7 @@ func (c *Client) tryToConnect(ctx context.Context) error {
 	}
 }
 
-func (c *Client) asyncPerformRead(mcs *mcs) <-chan error {
+func (c *MCSClient) asyncPerformRead(mcs *mcs) <-chan error {
 	ch := make(chan error)
 	go func() {
 		defer close(ch)
@@ -93,7 +93,7 @@ func (c *Client) asyncPerformRead(mcs *mcs) <-chan error {
 	return ch
 }
 
-func (c *Client) performRead(mcs *mcs) error {
+func (c *MCSClient) performRead(mcs *mcs) error {
 	// receive version
 	err := mcs.ReceiveVersion()
 	if err != nil {
@@ -117,7 +117,7 @@ func (c *Client) performRead(mcs *mcs) error {
 	}
 }
 
-func (c *Client) onDataMessage(tagData interface{}) error {
+func (c *MCSClient) onDataMessage(tagData interface{}) error {
 	switch data := tagData.(type) {
 	case *pb.LoginResponse:
 		c.receivedPersistentID = nil

@@ -20,8 +20,7 @@ type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// Client is FCM Push receive client.
-type Client struct {
+type MCSClient struct {
 	log                  ilogger
 	httpClient           httpClient
 	tlsConfig            *tls.Config
@@ -35,8 +34,8 @@ type Client struct {
 }
 
 // New returns a new FCM push receive client instance.
-func New(options ...ClientOption) *Client {
-	c := &Client{
+func New(options ...ClientOption) *MCSClient {
+	c := &MCSClient{
 		Events: make(chan Event, 50),
 	}
 

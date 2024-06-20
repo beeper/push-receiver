@@ -51,7 +51,7 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 		logger.Fatal(err)
 	}
 
-	fcmClient := pr.New(
+	mcsClient := pr.New(
 		pr.WithCreds(&creds.GCM),
 		pr.WithHeartbeat(
 			pr.WithServerInterval(1*time.Minute),
@@ -62,9 +62,9 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 		pr.WithReceivedPersistentID(persistentIDs),
 	)
 
-	go fcmClient.Subscribe(ctx)
+	go mcsClient.Subscribe(ctx)
 
-	for event := range fcmClient.Events {
+	for event := range mcsClient.Events {
 		switch ev := event.(type) {
 		case *pr.ConnectedEvent:
 			if err := clearPersistentID(persistentIdFilename); err != nil {
