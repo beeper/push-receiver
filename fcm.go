@@ -33,18 +33,10 @@ func (c *Client) Subscribe(ctx context.Context) {
 	defer close(c.Events)
 
 	for ctx.Err() == nil {
-		var err error
-		if c.creds == nil {
-			err = c.register(ctx)
-		} else {
-			_, err = CheckIn(ctx, &c.creds.GCM)
-		}
-		if err == nil {
-			// reset retry count when connection success
-			c.backoff.reset()
+		// reset retry count when connection success
+		c.backoff.reset()
 
-			err = c.tryToConnect(ctx)
-		}
+		err := c.tryToConnect(ctx)
 		if err != nil {
 			if errors.Is(err, ErrGcmAuthorization) {
 				c.Events <- &UnauthorizedError{err}
@@ -64,21 +56,6 @@ func (c *Client) Subscribe(ctx context.Context) {
 			}
 		}
 	}
-}
-
-func (c *Client) register(ctx context.Context) error {
-	gcmCreds, err := CheckIn(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	creds, err := RegisterGCM(ctx, *gcmCreds, nil)
-	if err != nil {
-		return err
-	}
-	c.creds = creds
-	c.Events <- &UpdateCredentialsEvent{creds}
-	return nil
 }
 
 func (c *Client) tryToConnect(ctx context.Context) error {

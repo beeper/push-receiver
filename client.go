@@ -25,7 +25,7 @@ type Client struct {
 	log                  ilogger
 	httpClient           httpClient
 	tlsConfig            *tls.Config
-	creds                *FCMCredentials
+	creds                *GCMCredentials
 	dialer               *net.Dialer
 	backoff              *Backoff
 	heartbeat            *Heartbeat

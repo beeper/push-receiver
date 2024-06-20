@@ -40,11 +40,6 @@ type HeartbeatEvent struct {
 	LastStreamIDReceived int32
 }
 
-// UpdateCredentialsEvent is credentials update event.
-type UpdateCredentialsEvent struct {
-	Credentials *FCMCredentials
-}
-
 // MessageEvent is receive message event.
 type MessageEvent struct {
 	PersistentID string `json:"persistentId"`

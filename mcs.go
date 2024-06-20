@@ -23,7 +23,7 @@ import (
 type mcs struct {
 	conn             *tls.Conn
 	log              ilogger
-	creds            *FCMCredentials
+	creds            *GCMCredentials
 	incomingStreamID int32
 	heartbeatAck     chan bool
 	heartbeat        *Heartbeat
@@ -31,7 +31,7 @@ type mcs struct {
 	events           chan Event
 }
 
-func newMCS(conn *tls.Conn, log ilogger, creds *FCMCredentials, heartbeat *Heartbeat, events chan Event) *mcs {
+func newMCS(conn *tls.Conn, log ilogger, creds *GCMCredentials, heartbeat *Heartbeat, events chan Event) *mcs {
 	return &mcs{
 		conn:             conn,
 		log:              log,
@@ -52,7 +52,7 @@ func (mcs *mcs) disconnect() {
 }
 
 func (mcs *mcs) SendLoginPacket(receivedPersistentId []string) error {
-	androidID := proto.String(strconv.FormatUint(mcs.creds.GCM.AndroidID, 10))
+	androidID := proto.String(strconv.FormatUint(mcs.creds.AndroidID, 10))
 
 	setting := []*pb.Setting{
 		{
@@ -70,10 +70,10 @@ func (mcs *mcs) SendLoginPacket(receivedPersistentId []string) error {
 	request := &pb.LoginRequest{
 		AccountId:            proto.Int64(1000000),
 		AuthService:          pb.LoginRequest_ANDROID_ID.Enum(),
-		AuthToken:            proto.String(strconv.FormatUint(mcs.creds.GCM.SecurityToken, 10)),
+		AuthToken:            proto.String(strconv.FormatUint(mcs.creds.SecurityToken, 10)),
 		Id:                   proto.String(fmt.Sprintf("chrome-%s", chromeVersion)),
 		Domain:               proto.String(mcsDomain),
-		DeviceId:             proto.String(fmt.Sprintf("android-%s", strconv.FormatUint(mcs.creds.GCM.AndroidID, 16))),
+		DeviceId:             proto.String(fmt.Sprintf("android-%s", strconv.FormatUint(mcs.creds.AndroidID, 16))),
 		NetworkType:          proto.Int32(1), // Wi-Fi
 		Resource:             androidID,
 		User:                 androidID,

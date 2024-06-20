@@ -23,7 +23,7 @@ func WithLogger(logger logger) ClientOption {
 }
 
 // WithCreds is credentials setter
-func WithCreds(creds *FCMCredentials) ClientOption {
+func WithCreds(creds *GCMCredentials) ClientOption {
 	return func(client *Client) {
 		client.creds = creds
 	}

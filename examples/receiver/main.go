@@ -52,7 +52,7 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 	}
 
 	fcmClient := pr.New(
-		pr.WithCreds(creds),
+		pr.WithCreds(&creds.GCM),
 		pr.WithHeartbeat(
 			pr.WithServerInterval(1*time.Minute),
 			pr.WithClientInterval(2*time.Minute),
@@ -66,11 +66,6 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 
 	for event := range fcmClient.Events {
 		switch ev := event.(type) {
-		case *pr.UpdateCredentialsEvent:
-			logger.Printf("Registration Token: %s", ev.Credentials.Token)
-			if err := saveCredentials(credsFilename, ev.Credentials); err != nil {
-				logger.Fatal(err)
-			}
 		case *pr.ConnectedEvent:
 			if err := clearPersistentID(persistentIdFilename); err != nil {
 				logger.Fatal(err)
