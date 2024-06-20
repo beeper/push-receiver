@@ -11,7 +11,21 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func CheckIn(ctx context.Context, opt *GCMCredentials) (*pb.AndroidCheckinResponse, error) {
+func CheckIn(ctx context.Context, opt *GCMCredentials) (*GCMCredentials, error) {
+	resp, err := checkin(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	creds := &GCMCredentials{
+		AndroidID:     *resp.AndroidId,
+		SecurityToken: *resp.SecurityToken,
+	}
+
+	return creds, nil
+}
+
+func checkin(ctx context.Context, opt *GCMCredentials) (*pb.AndroidCheckinResponse, error) {
 	id := int64(opt.AndroidID)
 	r := &pb.AndroidCheckinRequest{
 		Checkin: &pb.AndroidCheckinProto{

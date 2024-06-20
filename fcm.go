@@ -67,7 +67,12 @@ func (c *Client) Subscribe(ctx context.Context) {
 }
 
 func (c *Client) register(ctx context.Context) error {
-	response, err := c.registerGCM(ctx)
+	gcmCreds, err := CheckIn(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := RegisterGCM(ctx, *gcmCreds)
 	if err != nil {
 		return err
 	}

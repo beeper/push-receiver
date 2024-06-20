@@ -51,7 +51,7 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 		logger.Fatal(err)
 	}
 
-	fcmClient := pr.New(senderId,
+	fcmClient := pr.New(
 		pr.WithCreds(creds),
 		pr.WithHeartbeat(
 			pr.WithServerInterval(1*time.Minute),

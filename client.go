@@ -26,7 +26,6 @@ type httpClient interface {
 
 // Client is FCM Push receive client.
 type Client struct {
-	senderID             string
 	log                  ilogger
 	httpClient           httpClient
 	tlsConfig            *tls.Config
@@ -40,10 +39,9 @@ type Client struct {
 }
 
 // New returns a new FCM push receive client instance.
-func New(senderID string, options ...ClientOption) *Client {
+func New(options ...ClientOption) *Client {
 	c := &Client{
-		senderID: senderID,
-		Events:   make(chan Event, 50),
+		Events: make(chan Event, 50),
 	}
 
 	for _, option := range options {
@@ -82,8 +80,6 @@ func New(senderID string, options ...ClientOption) *Client {
 	if c.log == nil {
 		c.log = &discard{}
 	}
-
-	c.log.Print("Sender ID: ", c.senderID)
 
 	return c
 }
