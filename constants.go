@@ -15,7 +15,6 @@ const (
 	registerURL   = "https://android.clients.google.com/c2dm/register3"
 	checkinURL    = "https://android.clients.google.com/checkin"
 	chromeVersion = "101.0.4951.64"
-	fcmServerKey  = "BDOU99-h67HcA6JeFXHbSNMu7e2yNNu3RzoMj8TM4W88jITfq7ZmPvIM1Iv-4_l2LxQcYwhqby2xGpWwzjfAnG4"
 
 	fcmSubscribe = "https://fcm.googleapis.com/fcm/connect/subscribe"
 	fcmEndpoint  = "https://fcm.googleapis.com/fcm/send/"

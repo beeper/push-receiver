@@ -24,7 +24,7 @@ type GCMRegistrationOpts struct {
 	InstanceID string
 }
 
-func RegisterGCM(ctx context.Context, creds GCMCredentials, opts *GCMRegistrationOpts) (*FCMCredentials, error) {
+func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, opts *GCMRegistrationOpts) (*FCMCredentials, error) {
 	values := url.Values{}
 
 	var appID string
@@ -41,7 +41,7 @@ func RegisterGCM(ctx context.Context, creds GCMCredentials, opts *GCMRegistratio
 	values.Set("X-subtype", appID)
 	values.Set("device", fmt.Sprint(creds.AndroidID))
 	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
-	values.Set("sender", fcmServerKey)
+	values.Set("sender", authorizationEntity)
 
 	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
 		header.Set("Content-Type", "application/x-www-form-urlencoded")
