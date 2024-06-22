@@ -194,18 +194,18 @@ func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (interface{}, error) {
 }
 
 func (mcs *mcs) handleTag(receive interface{}) error {
-	switch receive.(type) {
+	switch receive := receive.(type) {
 	case *pb.HeartbeatPing:
-		mcs.updateIncomingStreamID((*receive.(*pb.HeartbeatPing)).GetLastStreamIdReceived())
+		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 		mcs.heartbeatAck <- true
 		return mcs.SendHeartbeatAckPacket()
 	case *pb.HeartbeatAck:
-		mcs.updateIncomingStreamID((*receive.(*pb.HeartbeatAck)).GetLastStreamIdReceived())
+		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 		mcs.heartbeatAck <- true
 	case *pb.LoginResponse:
-		mcs.updateIncomingStreamID((*receive.(*pb.LoginResponse)).GetLastStreamIdReceived())
+		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 	case *pb.IqStanza:
-		mcs.updateIncomingStreamID((*receive.(*pb.IqStanza)).GetLastStreamIdReceived())
+		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 	}
 	return nil
 }

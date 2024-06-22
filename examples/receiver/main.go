@@ -113,18 +113,6 @@ func loadCredentials(filename string) (*pr.FCMCredentials, error) {
 	return creds, err
 }
 
-func saveCredentials(filename string, credentials *pr.FCMCredentials) error {
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if f != nil {
-		defer f.Close()
-	}
-	if err != nil {
-		return err
-	}
-	encoder := json.NewEncoder(f)
-	return encoder.Encode(credentials)
-}
-
 func loadPersistentIDs(filename string) ([]string, error) {
 	var persistentIDs []string
 

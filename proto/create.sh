@@ -11,4 +11,3 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 bin/protoc --go_out=plugins=grpc:../pb/checkin android_checkin.proto
 bin/protoc --go_out=plugins=grpc:../pb/checkin checkin.proto
 bin/protoc --go_out=plugins=grpc:../pb/mcs mcs.proto
-
