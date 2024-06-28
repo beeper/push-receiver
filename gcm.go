@@ -69,3 +69,28 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 		AppID: appID,
 	}, nil
 }
+
+func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, appID string) error {
+	values := url.Values{}
+	values.Set("app", "org.chromium.linux")
+	values.Set("scope", "GCM")
+	values.Set("X-scope", "GCM")
+	values.Set("X-subtype", appID)
+	values.Set("device", fmt.Sprint(creds.AndroidID))
+	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
+	values.Set("sender", authorizationEntity)
+	values.Set("delete", "true")
+	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
+		header.Set("Content-Type", "application/x-www-form-urlencoded")
+		header.Set("Authorization", fmt.Sprintf("AidLogin %d:%d", creds.AndroidID, creds.SecurityToken))
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to unregister with GCM")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return errors.New("failed to unregister with GCM")
+	}
+
+	return nil
+}
