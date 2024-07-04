@@ -13,7 +13,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -22,17 +24,26 @@ import (
 type GCMRegistrationOpts struct {
 	AppID      string
 	InstanceID string
+	Expiry     time.Duration
 }
 
 func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, opts *GCMRegistrationOpts) (*FCMCredentials, error) {
 	values := url.Values{}
 
 	var appID string
-	if opts != nil {
+	if opts != nil && opts.AppID != "" {
 		appID = opts.AppID
-		values.Set("appId", opts.InstanceID)
 	} else {
 		appID = uuid.New().String()
+	}
+
+	if opts != nil && opts.InstanceID != "" {
+		values.Set("appId", opts.InstanceID)
+	}
+
+	if opts != nil && opts.Expiry != 0 {
+		ttl := strconv.Itoa(int(opts.Expiry.Seconds()))
+		values.Set("ttl", ttl)
 	}
 
 	values.Set("app", "org.chromium.linux")
