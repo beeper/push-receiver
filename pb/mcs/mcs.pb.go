@@ -1539,6 +1539,17 @@ func (x *DataMessageStanza) GetRawData() []byte {
 	return nil
 }
 
+func (x *DataMessageStanza) GetAppID() string {
+	if x != nil {
+		for _, d := range x.GetAppData() {
+			if *d.Key == "subtype" {
+				return *d.Value
+			}
+		}
+	}
+	return ""
+}
+
 func (x *DataMessageStanza) GetImmediateAck() bool {
 	if x != nil && x.ImmediateAck != nil {
 		return *x.ImmediateAck

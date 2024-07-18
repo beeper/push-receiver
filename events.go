@@ -42,12 +42,16 @@ type HeartbeatEvent struct {
 
 // MessageEvent is receive message event.
 type MessageEvent struct {
-	PersistentID string `json:"persistentId"`
-	From         string `json:"from"`
-	To           string `json:"to"`
-	TTL          int32  `json:"ttl"`
-	Sent         int64  `json:"sent"`
-	Data         []byte `json:"data"`
+	PersistentID string        `json:"persistentId"`
+	From         string        `json:"from"`
+	To           string        `json:"to"`
+	TTL          int32         `json:"ttl"`
+	Sent         int64         `json:"sent"`
+	AppData      []*pb.AppData `json:"app_data"`
+	Token        string        `json:"token"`
+	RegID        string        `json:"reg_id"`
+	RawData      []byte        `json:"raw_data"`
+	AppID        string        `json:"app_id"`
 }
 
 func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
@@ -57,7 +61,11 @@ func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
 		To:           data.GetTo(),
 		TTL:          data.GetTtl(),
 		Sent:         data.GetSent(),
-		Data:         data.GetRawData(),
+		AppData:      data.GetAppData(),
+		Token:        data.GetToken(),
+		RegID:        data.GetRegId(),
+		RawData:      data.GetRawData(),
+		AppID:        data.GetAppID(),
 	}
 }
 
