@@ -105,6 +105,22 @@ func (mcs *mcs) SendHeartbeatAckPacket() error {
 	return mcs.sendRequest(tagHeartbeatAck, request, false)
 }
 
+func (mcs *mcs) SendStreamAck() error {
+	iqStanzaSet := pb.IqStanza_SET
+	streamID := mcs.incomingStreamID
+	id := ""
+	request := &pb.IqStanza{
+		Id:                   &id,
+		Type:                 &iqStanzaSet,
+		LastStreamIdReceived: proto.Int32(streamID),
+		Extension: &pb.Extension{
+			Id:   proto.Int32(13),
+			Data: []byte{},
+		},
+	}
+	return mcs.sendRequest(tagIqStanza, request, false)
+}
+
 func (mcs *mcs) sendRequest(tag tagType, request proto.Message, containVersion bool) error {
 	header := make([]byte, 0, 100)
 	if containVersion {

@@ -77,3 +77,9 @@ func WithRetry(retry bool) ClientOption {
 		client.retryDisabled = !retry
 	}
 }
+
+func WithMaxUnackedIDs(maxIDs int) ClientOption {
+	return func(client *MCSClient) {
+		client.maxUnackedIDs = maxIDs
+	}
+}

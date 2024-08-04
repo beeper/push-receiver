@@ -69,6 +69,8 @@ func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
 	}
 }
 
+type StreamAck struct{}
+
 // HeartbeatError is send heartbeat error.
 type HeartbeatError struct {
 	ErrorObj error

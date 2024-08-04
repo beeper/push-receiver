@@ -25,13 +25,15 @@ type httpClient interface {
 }
 
 type MCSClient struct {
-	log                  ilogger
-	httpClient           httpClient
-	tlsConfig            *tls.Config
-	creds                *GCMCredentials
-	dialer               *net.Dialer
-	backoff              *Backoff
-	heartbeat            *Heartbeat
+	log           ilogger
+	httpClient    httpClient
+	tlsConfig     *tls.Config
+	creds         *GCMCredentials
+	dialer        *net.Dialer
+	backoff       *Backoff
+	heartbeat     *Heartbeat
+	maxUnackedIDs int
+
 	receivedPersistentID []string
 	retryDisabled        bool
 	Events               chan Event
@@ -78,6 +80,9 @@ func New(options ...ClientOption) *MCSClient {
 	}
 	if c.log == nil {
 		c.log = &discard{}
+	}
+	if c.maxUnackedIDs == 0 {
+		c.maxUnackedIDs = 10
 	}
 
 	return c
@@ -168,7 +173,24 @@ func (c *MCSClient) performRead(mcs *mcs) error {
 		if err != nil {
 			return errors.Wrap(err, "process data message failed")
 		}
+
+		if len(c.receivedPersistentID) >= c.maxUnackedIDs {
+			err = c.AckStreamPosition(mcs)
+			if err != nil {
+				return errors.Wrap(err, "unable to acknowledge current stream position")
+			}
+		}
 	}
+}
+
+func (c *MCSClient) AckStreamPosition(mcs *mcs) error {
+	err := mcs.SendStreamAck()
+	if err != nil {
+		return err
+	}
+	c.receivedPersistentID = []string{}
+	c.Events <- &StreamAck{}
+	return nil
 }
 
 func (c *MCSClient) onDataMessage(tagData interface{}) error {
