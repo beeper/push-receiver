@@ -15,8 +15,9 @@ import (
 	"net/http"
 	"time"
 
-	pb "github.com/beeper/push-receiver/pb/mcs"
 	"github.com/pkg/errors"
+
+	pb "github.com/beeper/push-receiver/pb/mcs"
 )
 
 // httpClient defines the minimal interface needed for an http.Client to be implemented.
@@ -135,38 +136,25 @@ func (c *MCSClient) tryToConnect(ctx context.Context) error {
 	// start heartbeat
 	go c.heartbeat.start(ctx, mcs)
 
-	select {
-	case err := <-c.asyncPerformRead(mcs):
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return c.readMessages(ctx, mcs)
 }
 
-func (c *MCSClient) asyncPerformRead(mcs *mcs) <-chan error {
-	ch := make(chan error)
-	go func() {
-		defer close(ch)
-		ch <- c.performRead(mcs)
-	}()
-	return ch
-}
-
-func (c *MCSClient) performRead(mcs *mcs) error {
+func (c *MCSClient) readMessages(ctx context.Context, mcs *mcs) error {
 	// receive version
 	err := mcs.ReceiveVersion()
 	if err != nil {
 		return errors.Wrap(err, "receive version failed")
 	}
 
-	for {
+	for ctx.Err() != nil {
 		// receive tag
 		data, err := mcs.PerformReadTag()
 		if err != nil {
 			return errors.Wrap(err, "receive tag failed")
-		}
-		if data == nil {
+		} else if data == nil {
 			return ErrFcmNotEnoughData
+		} else if ctx.Err() != nil {
+			break
 		}
 
 		err = c.onDataMessage(data)
@@ -181,6 +169,8 @@ func (c *MCSClient) performRead(mcs *mcs) error {
 			}
 		}
 	}
+
+	return nil
 }
 
 func (c *MCSClient) AckStreamPosition(mcs *mcs) error {
