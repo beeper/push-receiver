@@ -146,7 +146,7 @@ func (c *MCSClient) readMessages(ctx context.Context, mcs *mcs) error {
 		return errors.Wrap(err, "receive version failed")
 	}
 
-	for ctx.Err() != nil {
+	for ctx.Err() == nil {
 		// receive tag
 		data, err := mcs.PerformReadTag()
 		if err != nil {
