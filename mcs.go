@@ -159,7 +159,7 @@ func (mcs *mcs) ReceiveVersion() error {
 	return nil
 }
 
-func (mcs *mcs) PerformReadTag() (interface{}, error) {
+func (mcs *mcs) PerformReadTag() (any, error) {
 	var err error
 
 	// receive tag
@@ -191,8 +191,8 @@ func (mcs *mcs) PerformReadTag() (interface{}, error) {
 	return mcs.UnmarshalTagData(tag, buf)
 }
 
-func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (interface{}, error) {
-	var receive interface{}
+func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (any, error) {
+	var receive any
 
 	receiveGenerator, exists := tagMapping[tag]
 	if exists {
@@ -216,7 +216,7 @@ func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (interface{}, error) {
 	return nil, errors.Errorf("unknown tag: %x", tag)
 }
 
-func (mcs *mcs) handleTag(receive interface{}) error {
+func (mcs *mcs) handleTag(receive any) error {
 	switch receive := receive.(type) {
 	case *pb.HeartbeatPing:
 		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
@@ -270,16 +270,16 @@ func (mcs *mcs) receiveSize() (int, error) {
 	}
 }
 
-type tagMessageGenerator func() interface{}
+type tagMessageGenerator func() any
 
 // Tag mappings.
 var tagMapping = map[tagType]tagMessageGenerator{
-	tagHeartbeatPing:     func() interface{} { return &pb.HeartbeatPing{} },
-	tagHeartbeatAck:      func() interface{} { return &pb.HeartbeatAck{} },
-	tagLoginRequest:      func() interface{} { return &pb.LoginRequest{} },
-	tagLoginResponse:     func() interface{} { return &pb.LoginResponse{} },
-	tagClose:             func() interface{} { return &pb.Close{} },
-	tagIqStanza:          func() interface{} { return &pb.IqStanza{} },
-	tagDataMessageStanza: func() interface{} { return &pb.DataMessageStanza{} },
-	tagStreamErrorStanza: func() interface{} { return &pb.StreamErrorStanza{} },
+	tagHeartbeatPing:     func() any { return &pb.HeartbeatPing{} },
+	tagHeartbeatAck:      func() any { return &pb.HeartbeatAck{} },
+	tagLoginRequest:      func() any { return &pb.LoginRequest{} },
+	tagLoginResponse:     func() any { return &pb.LoginResponse{} },
+	tagClose:             func() any { return &pb.Close{} },
+	tagIqStanza:          func() any { return &pb.IqStanza{} },
+	tagDataMessageStanza: func() any { return &pb.DataMessageStanza{} },
+	tagStreamErrorStanza: func() any { return &pb.StreamErrorStanza{} },
 }
