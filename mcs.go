@@ -14,15 +14,17 @@ import (
 	"strconv"
 	"sync"
 
-	pb "github.com/beeper/push-receiver/pb/mcs"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
+
+	pb "github.com/beeper/push-receiver/pb/mcs"
 )
 
 type mcs struct {
 	conn             *tls.Conn
-	log              ilogger
+	log              zerolog.Logger
 	creds            *GCMCredentials
 	incomingStreamID int32
 	heartbeatAck     chan bool
@@ -31,7 +33,7 @@ type mcs struct {
 	events           chan Event
 }
 
-func newMCS(conn *tls.Conn, log ilogger, creds *GCMCredentials, heartbeat *Heartbeat, events chan Event) *mcs {
+func newMCS(conn *tls.Conn, log zerolog.Logger, creds *GCMCredentials, heartbeat *Heartbeat, events chan Event) *mcs {
 	return &mcs{
 		conn:             conn,
 		log:              log,
@@ -129,7 +131,10 @@ func (mcs *mcs) sendRequest(tag tagType, request proto.Message, containVersion b
 		header = append(header, byte(tag))
 	}
 
-	mcs.log.Print("MCS request ", tag, request)
+	mcs.log.Trace().
+		Str("tag_type", string(tag)).
+		Any("request", request).
+		Msg("Send MCS request")
 
 	header = protowire.AppendVarint(header, uint64(proto.Size(request)))
 	data, err := proto.Marshal(request)
@@ -196,8 +201,10 @@ func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (interface{}, error) {
 			return receive, errors.Wrapf(err, "unmarshal tag(%x) data", tag)
 		}
 
-		// output receive
-		mcs.log.Print("MCS receive ", tag, receive)
+		mcs.log.Trace().
+			Str("tag", string(tag)).
+			Any("receive", receive).
+			Msg("Receive MCS message")
 
 		// handling tag
 		if err := mcs.handleTag(receive); err != nil {

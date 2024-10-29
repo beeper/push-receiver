@@ -15,13 +15,6 @@ import (
 // ClientOption type
 type ClientOption func(*MCSClient)
 
-// WithLogger is logger setter
-func WithLogger(logger logger) ClientOption {
-	return func(client *MCSClient) {
-		client.log = internalLog{logger}
-	}
-}
-
 // WithCreds is credentials setter
 func WithCreds(creds *GCMCredentials) ClientOption {
 	return func(client *MCSClient) {

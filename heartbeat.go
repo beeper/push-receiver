@@ -104,6 +104,7 @@ func (h *Heartbeat) start(ctx context.Context, mcs *mcs) {
 	for {
 		select {
 		case <-ctx.Done():
+			mcs.log.Info().Msg("Force disconnect by canceled context")
 			mcs.disconnect()
 			return
 		case <-mcs.heartbeatAck:
@@ -112,7 +113,7 @@ func (h *Heartbeat) start(ctx context.Context, mcs *mcs) {
 			}
 		case <-pingDeadmanC:
 			// force disconnect
-			mcs.log.Print("force disconnect by heartbeat")
+			mcs.log.Info().Msg("Force disconnect by heartbeat timeout")
 			mcs.disconnect()
 			return
 		case <-pingTickerC:

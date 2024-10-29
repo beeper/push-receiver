@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 
 	pb "github.com/beeper/push-receiver/pb/mcs"
 )
@@ -26,7 +27,6 @@ type httpClient interface {
 }
 
 type MCSClient struct {
-	log           ilogger
 	httpClient    httpClient
 	tlsConfig     *tls.Config
 	creds         *GCMCredentials
@@ -79,9 +79,6 @@ func New(options ...ClientOption) *MCSClient {
 			},
 		}
 	}
-	if c.log == nil {
-		c.log = &discard{}
-	}
 	if c.maxUnackedIDs == 0 {
 		c.maxUnackedIDs = 10
 	}
@@ -125,7 +122,7 @@ func (c *MCSClient) tryToConnect(ctx context.Context) error {
 	}
 	defer conn.Close()
 
-	mcs := newMCS(conn, c.log, c.creds, c.heartbeat, c.Events)
+	mcs := newMCS(conn, *zerolog.Ctx(ctx), c.creds, c.heartbeat, c.Events)
 	defer mcs.disconnect()
 
 	err = mcs.SendLoginPacket(c.receivedPersistentID)
