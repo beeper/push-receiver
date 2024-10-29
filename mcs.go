@@ -53,6 +53,14 @@ func (mcs *mcs) disconnect() {
 	})
 }
 
+func (mcs *mcs) getLogEventForTag(tag tagType) *zerolog.Event {
+	if tag == tagHeartbeatPing || tag == tagHeartbeatAck {
+		return mcs.log.Trace()
+	} else {
+		return mcs.log.Debug()
+	}
+}
+
 func (mcs *mcs) SendLoginPacket(receivedPersistentId []string) error {
 	androidID := proto.String(strconv.FormatUint(mcs.creds.AndroidID, 10))
 
@@ -131,8 +139,8 @@ func (mcs *mcs) sendRequest(tag tagType, request proto.Message, containVersion b
 		header = append(header, byte(tag))
 	}
 
-	mcs.log.Trace().
-		Str("tag_type", string(tag)).
+	mcs.getLogEventForTag(tag).
+		Str("tag", string(tag)).
 		Any("request", request).
 		Msg("Send MCS request")
 
@@ -201,7 +209,7 @@ func (mcs *mcs) UnmarshalTagData(tag tagType, buf []byte) (any, error) {
 			return receive, errors.Wrapf(err, "unmarshal tag(%x) data", tag)
 		}
 
-		mcs.log.Trace().
+		mcs.getLogEventForTag(tag).
 			Str("tag", string(tag)).
 			Any("receive", receive).
 			Msg("Receive MCS message")
