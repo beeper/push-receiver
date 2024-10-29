@@ -8,42 +8,63 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"reflect"
+	"sync"
+	"syscall"
 	"time"
+
+	"github.com/rs/zerolog"
+	deflog "github.com/rs/zerolog/log"
 
 	pr "github.com/beeper/push-receiver"
 )
 
 func main() {
+	zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	deflog.Logger = deflog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	defaultContextLogger := deflog.Logger.With().Bool("default_context_log", true).Caller().Logger()
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	zerolog.DefaultContextLogger = &defaultContextLogger
+
 	var (
-		senderId             string
-		credsFilename        string
-		persistentIdFilename string
+		persistentIdFilename     string
+		androidID, securityToken uint64
 	)
 	flag.NewFlagSet("help", flag.ExitOnError)
-	flag.StringVar(&senderId, "sender-id", "", "FCM's sender ID (needed)")
-	flag.StringVar(&credsFilename, "credentials", "credentials.json", "Credentials filename")
 	flag.StringVar(&persistentIdFilename, "persistent-id", "persistent_id.txt", "PersistentID filename")
+	flag.Uint64Var(&androidID, "android-id", 0, "Android ID")
+	flag.Uint64Var(&securityToken, "security-token", 0, "Security token")
 	flag.Parse()
 
-	if len(senderId) == 0 || len(credsFilename) == 0 {
-		flag.PrintDefaults()
-		return
+	if androidID == 0 || securityToken == 0 {
+		panic("androidID and securityToken must be set")
 	}
 
-	ctx := context.Background()
-	realMain(ctx, senderId, credsFilename, persistentIdFilename)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	var wg sync.WaitGroup
+
+	go realMain(ctx, &wg, androidID, securityToken, persistentIdFilename)
+
+	<-done
+	cancel()
+	wg.Wait()
 }
 
-func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename string) {
-	var creds *pr.FCMCredentials
+func realMain(ctx context.Context, wg *sync.WaitGroup, androidID, securityToken uint64, persistentIdFilename string) {
+	wg.Add(1)
+	defer wg.Done()
+
+	creds := pr.GCMCredentials{
+		AndroidID:     androidID,
+		SecurityToken: securityToken,
+	}
 
 	logger := log.New(os.Stderr, "app : ", log.Lshortfile|log.Ldate|log.Ltime)
-
-	creds, err := loadCredentials(credsFilename)
-	if err != nil {
-		logger.Fatal(err)
-	}
 
 	// load received persistent ids
 	persistentIDs, err := loadPersistentIDs(persistentIdFilename)
@@ -52,13 +73,12 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 	}
 
 	mcsClient := pr.New(
-		pr.WithCreds(&creds.GCM),
+		pr.WithCreds(&creds),
 		pr.WithHeartbeat(
 			pr.WithServerInterval(1*time.Minute),
 			pr.WithClientInterval(2*time.Minute),
 			pr.WithAdaptive(true),
 		),
-		pr.WithLogger(log.New(os.Stderr, "push: ", log.Lshortfile|log.Ldate|log.Ltime)),
 		pr.WithReceivedPersistentID(persistentIDs),
 	)
 
@@ -75,7 +95,7 @@ func realMain(ctx context.Context, senderId, credsFilename, persistentIdFilename
 		case *pr.HeartbeatError:
 			logger.Printf("error: %v", ev.ErrorObj)
 		case *pr.MessageEvent:
-			logger.Printf("Received message: %s, %s", string(ev.Data), ev.PersistentID)
+			logger.Printf("Received message: %s, %s", string(ev.RawData), ev.PersistentID)
 
 			// save persistentID
 			if err := savePersistentID(persistentIdFilename, ev.PersistentID); err != nil {
