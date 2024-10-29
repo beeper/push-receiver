@@ -115,24 +115,6 @@ func isExist(filename string) bool {
 	return err == nil
 }
 
-func loadCredentials(filename string) (*pr.FCMCredentials, error) {
-	if !isExist(filename) {
-		return nil, nil
-	}
-
-	f, err := os.Open(filename)
-	if f != nil {
-		defer f.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-	creds := &pr.FCMCredentials{}
-	decoder := json.NewDecoder(f)
-	err = decoder.Decode(creds)
-	return creds, err
-}
-
 func loadPersistentIDs(filename string) ([]string, error) {
 	var persistentIDs []string
 
