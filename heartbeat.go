@@ -104,6 +104,7 @@ func (h *Heartbeat) start(ctx context.Context, mcs *mcs) {
 	for {
 		select {
 		case <-ctx.Done():
+			mcs.disconnect()
 			return
 		case <-mcs.heartbeatAck:
 			if pingDeadman != nil {
