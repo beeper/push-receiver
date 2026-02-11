@@ -14,7 +14,7 @@ type tagType byte
 const (
 	registerURL   = "https://android.clients.google.com/c2dm/register3"
 	checkinURL    = "https://android.clients.google.com/checkin"
-	chromeVersion = "101.0.4951.64"
+	chromeVersion = "144.0.7559.132"
 
 	fcmSubscribe = "https://fcm.googleapis.com/fcm/connect/subscribe"
 	fcmEndpoint  = "https://fcm.googleapis.com/fcm/send/"

@@ -34,7 +34,7 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 	if opts != nil && opts.AppID != "" {
 		appID = opts.AppID
 	} else {
-		appID = uuid.New().String()
+		appID = "wp:" + strings.ToUpper(uuid.New().String())
 	}
 
 	if opts != nil && opts.InstanceID != "" {
