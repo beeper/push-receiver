@@ -35,11 +35,11 @@ func main() {
 	flag.StringVar(&persistentIdFilename, "persistent-id", "persistent_id.txt", "PersistentID filename")
 	flag.Uint64Var(&androidID, "android-id", 0, "Android ID")
 	flag.Uint64Var(&securityToken, "security-token", 0, "Security token")
+	checkin := flag.Bool("checkin", false, "checkin and print androidID and securityToken")
+	registerFor := flag.String("register", "", "authorized entity to register for")
+	registerAppID := flag.String("app-id", "", "app id for register")
+	registerInstanceID := flag.String("instance-id", "", "instance id for register")
 	flag.Parse()
-
-	if androidID == 0 || securityToken == 0 {
-		panic("androidID and securityToken must be set")
-	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -48,11 +48,45 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	go realMain(ctx, &wg, androidID, securityToken, persistentIdFilename)
+	if *checkin {
+		doCheckin(ctx, androidID, securityToken)
+	} else if *registerFor != "" {
+		doRegister(ctx, androidID, securityToken, *registerFor, *registerAppID, *registerInstanceID)
+	} else {
+		if androidID == 0 || securityToken == 0 {
+			panic("androidID and securityToken must be set")
+		}
+		go realMain(ctx, &wg, androidID, securityToken, persistentIdFilename)
+		<-done
+		cancel()
+		wg.Wait()
+	}
 
-	<-done
-	cancel()
-	wg.Wait()
+}
+
+func doCheckin(ctx context.Context, androidID, securityToken uint64) {
+	resp, err := pr.CheckIn(ctx, &pr.GCMCredentials{
+		AndroidID:     androidID,
+		SecurityToken: securityToken,
+	})
+	if err != nil {
+		log.Fatalf("checkin error: %v", err)
+	}
+	log.Printf("AndroidID: %d, SecurityToken: %d", resp.AndroidID, resp.SecurityToken)
+}
+
+func doRegister(ctx context.Context, androidID, securityToken uint64, authorizedEntity, appID, instanceID string) {
+	resp, err := pr.RegisterGCM(ctx, authorizedEntity, pr.GCMCredentials{
+		AndroidID:     androidID,
+		SecurityToken: securityToken,
+	}, &pr.GCMRegistrationOpts{
+		AppID:      appID,
+		InstanceID: instanceID,
+	})
+	if err != nil {
+		log.Fatalf("register error: %v", err)
+	}
+	log.Printf("AppID: %s, Token: %s", resp.AppID, resp.Token)
 }
 
 func realMain(ctx context.Context, wg *sync.WaitGroup, androidID, securityToken uint64, persistentIdFilename string) {

@@ -160,3 +160,4 @@ $RECYCLE.BIN/
 # Files for testing.
 serviceAccountKey.json
 credentials.json
+persistent_id.txt
