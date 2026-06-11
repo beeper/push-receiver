@@ -107,6 +107,9 @@ func (h *Heartbeat) start(ctx context.Context, mcs *mcs) {
 			mcs.log.Info().Msg("Force disconnect by canceled context")
 			mcs.disconnect()
 			return
+		case <-mcs.done:
+			// connection torn down elsewhere (e.g. read loop failed)
+			return
 		case <-mcs.heartbeatAck:
 			if pingDeadman != nil {
 				pingDeadman.Reset(h.deadmanTimeout)

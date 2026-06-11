@@ -30,6 +30,7 @@ type mcs struct {
 	heartbeatAck     chan bool
 	heartbeat        *Heartbeat
 	disconnectDm     sync.Once
+	done             chan struct{}
 	events           chan Event
 }
 
@@ -41,13 +42,14 @@ func newMCS(conn *tls.Conn, log zerolog.Logger, creds *GCMCredentials, heartbeat
 		incomingStreamID: 0,
 		heartbeatAck:     make(chan bool),
 		heartbeat:        heartbeat,
+		done:             make(chan struct{}),
 		events:           events,
 	}
 }
 
 func (mcs *mcs) disconnect() {
 	mcs.disconnectDm.Do(func() {
-		close(mcs.heartbeatAck)
+		close(mcs.done)
 		_ = mcs.conn.Close()
 		mcs.events <- &DisconnectedEvent{}
 	})
@@ -228,17 +230,26 @@ func (mcs *mcs) handleTag(receive any) error {
 	switch receive := receive.(type) {
 	case *pb.HeartbeatPing:
 		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
-		mcs.heartbeatAck <- true
+		mcs.sendHeartbeatAck()
 		return mcs.SendHeartbeatAckPacket()
 	case *pb.HeartbeatAck:
 		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
-		mcs.heartbeatAck <- true
+		mcs.sendHeartbeatAck()
 	case *pb.LoginResponse:
 		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 	case *pb.IqStanza:
 		mcs.updateIncomingStreamID(receive.GetLastStreamIdReceived())
 	}
 	return nil
+}
+
+// sendHeartbeatAck notifies the heartbeat goroutine without panicking if the
+// connection was torn down concurrently (done is closed, nobody is receiving).
+func (mcs *mcs) sendHeartbeatAck() {
+	select {
+	case mcs.heartbeatAck <- true:
+	case <-mcs.done:
+	}
 }
 
 func (mcs *mcs) updateIncomingStreamID(lastStreamIdReceived int32) {
