@@ -72,7 +72,15 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 	if err != nil {
 		return nil, errors.Wrap(err, "parse GCM register URL")
 	}
+	if errorCode := subscription.Get("Error"); errorCode != "" {
+		return nil, errors.Errorf("GCM registration failed: %s", errorCode)
+	} else if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("GCM registration failed with HTTP %d", res.StatusCode)
+	}
 	token := subscription.Get("token")
+	if token == "" {
+		return nil, errors.New("GCM registration returned an empty token")
+	}
 
 	return &FCMCredentials{
 		GCM:   creds,
