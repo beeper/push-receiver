@@ -38,7 +38,7 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 	}
 
 	if opts != nil && opts.InstanceID != "" {
-		values.Set("appId", opts.InstanceID)
+		values.Set("appid", opts.InstanceID)
 	}
 
 	if opts != nil && opts.Expiry != 0 {
