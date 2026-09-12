@@ -28,10 +28,10 @@ type FirebaseInstallation struct {
 type FirebaseError int
 
 func (err FirebaseError) Error() string {
-	return fmt.Sprintf("Firebase installation HTTP status %d", int(err))
+	return fmt.Sprintf("firebase installation HTTP status %d", int(err))
 }
 
-var ErrFirebaseInstallationAuth = errors.New("Firebase installation authorization rejected")
+var ErrFirebaseInstallationAuth = errors.New("firebase installation authorization rejected")
 
 func NewFirebaseInstallationID() (string, error) {
 	id, err := uuid.NewRandom()
@@ -185,7 +185,7 @@ func postAndroidRequest(ctx context.Context, endpoint string, body io.Reader, he
 		if errors.As(err, &urlError) {
 			err = urlError.Err
 		}
-		return nil, fmt.Errorf("Android registration request failed: %w", err)
+		return nil, fmt.Errorf("android registration request failed: %w", err)
 	}
 	return response, nil
 }

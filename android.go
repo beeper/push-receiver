@@ -106,7 +106,7 @@ func androidRegistrationValues(sender string, creds GCMCredentials, config *Andr
 		return nil, fmt.Errorf("incomplete Android checkin credentials")
 	}
 	if installation == nil || !validFirebaseInstallationID(installation.FID) || requireAuth && !installation.AuthTokenValid() {
-		return nil, fmt.Errorf("Firebase installation authorization is missing or expiring")
+		return nil, fmt.Errorf("firebase installation authorization is missing or expiring")
 	}
 	appName := config.FirebaseAppName
 	if appName == "" {

@@ -154,7 +154,7 @@ func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCre
 	}
 	if android {
 		if !response.Has("deleted") {
-			return errors.New("Android FCM unregister response missing confirmation")
+			return errors.New("android FCM unregister response missing confirmation")
 		}
 	} else if response.Get("token") == "" && response.Get("deleted") != appID {
 		return errors.New("GCM unregister response missing confirmation")

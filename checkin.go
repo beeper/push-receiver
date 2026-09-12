@@ -126,7 +126,7 @@ func checkin(ctx context.Context, opt *GCMCredentials, config *AndroidCheckInCon
 	}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if config != nil {
-			return nil, fmt.Errorf("Android checkin HTTP status %d", res.StatusCode)
+			return nil, fmt.Errorf("android checkin HTTP status %d", res.StatusCode)
 		}
 		return nil, errors.Errorf("server error: %s", res.Status)
 	}
