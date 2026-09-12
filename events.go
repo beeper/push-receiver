@@ -55,6 +55,10 @@ type MessageEvent struct {
 }
 
 func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
+	appID := data.GetAppID()
+	if appID == "" {
+		appID = data.GetCategory()
+	}
 	return &MessageEvent{
 		PersistentID: data.GetPersistentId(),
 		From:         data.GetFrom(),
@@ -65,7 +69,7 @@ func newMessageEvent(data *pb.DataMessageStanza) *MessageEvent {
 		Token:        data.GetToken(),
 		RegID:        data.GetRegId(),
 		RawData:      data.GetRawData(),
-		AppID:        data.GetAppID(),
+		AppID:        appID,
 	}
 }
 

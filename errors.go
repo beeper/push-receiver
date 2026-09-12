@@ -9,6 +9,14 @@ package pushreceiver
 
 import "github.com/pkg/errors"
 
+type GCMError string
+
+func (err GCMError) Error() string {
+	return "GCM error: " + string(err)
+}
+
+const ErrGCMDeviceRegistration = GCMError("PHONE_REGISTRATION_ERROR")
+
 // ErrGcmAuthorization is authorization error of GCM.
 var ErrGcmAuthorization = errors.New("GCM authorization error")
 
