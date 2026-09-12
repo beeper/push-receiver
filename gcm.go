@@ -22,9 +22,11 @@ import (
 )
 
 type GCMRegistrationOpts struct {
-	AppID      string
-	InstanceID string
-	Expiry     time.Duration
+	AppID        string
+	InstanceID   string
+	Expiry       time.Duration
+	Android      *AndroidFCMConfig
+	Installation *FirebaseInstallation
 }
 
 func setGCMAppID(values url.Values, appID string) {
@@ -59,30 +61,40 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 		appID = NewGCMAppID(authorizationEntity)
 	}
 
-	if opts != nil && opts.InstanceID != "" {
-		values.Set("appid", opts.InstanceID)
+	endpoint := registerURL
+	post := postRequest
+	if opts != nil && opts.Android != nil {
+		var err error
+		values, err = androidRegistrationValues(authorizationEntity, creds, opts.Android, opts.Installation, true)
+		if err != nil {
+			return nil, err
+		}
+		endpoint = "https://android.apis.google.com/c2dm/register3"
+		post = postAndroidRequest
+	} else {
+		if opts != nil && opts.InstanceID != "" {
+			values.Set("appid", opts.InstanceID)
+		}
+		if opts != nil && opts.Expiry != 0 {
+			ttl := strconv.Itoa(int(opts.Expiry.Seconds()))
+			values.Set("ttl", ttl)
+		}
+		setGCMAppID(values, appID)
+		values.Set("scope", "GCM")
+		values.Set("X-scope", "GCM")
+		values.Set("device", fmt.Sprint(creds.AndroidID))
+		values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
+		values.Set("sender", authorizationEntity)
 	}
 
-	if opts != nil && opts.Expiry != 0 {
-		ttl := strconv.Itoa(int(opts.Expiry.Seconds()))
-		values.Set("ttl", ttl)
-	}
-
-	setGCMAppID(values, appID)
-	values.Set("scope", "GCM")
-	values.Set("X-scope", "GCM")
-	values.Set("device", fmt.Sprint(creds.AndroidID))
-	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
-	values.Set("sender", authorizationEntity)
-
-	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
+	res, err := post(ctx, endpoint, strings.NewReader(values.Encode()), func(header *http.Header) {
 		header.Set("Content-Type", "application/x-www-form-urlencoded")
 		header.Set("Authorization", fmt.Sprintf("AidLogin %d:%d", creds.AndroidID, creds.SecurityToken))
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "request GCM register")
 	}
-	subscription, err := parseGCMResponse(res)
+	subscription, err := parseGCMResponse(res, opts != nil && opts.Android != nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "read GCM register response")
 	}
@@ -98,16 +110,37 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 	}, nil
 }
 
-func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, appID string) error {
+func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, appID string, options ...*GCMRegistrationOpts) error {
+	if len(options) > 1 {
+		return errors.New("multiple GCM unregistration options")
+	}
+	var opts *GCMRegistrationOpts
+	if len(options) == 1 {
+		opts = options[0]
+	}
+	android := opts != nil && opts.Android != nil
 	values := url.Values{}
-	setGCMAppID(values, appID)
-	values.Set("scope", "GCM")
-	values.Set("X-scope", "GCM")
-	values.Set("device", fmt.Sprint(creds.AndroidID))
-	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
-	values.Set("sender", authorizationEntity)
-	values.Set("delete", "true")
-	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
+	endpoint := registerURL
+	post := postRequest
+	if android {
+		var err error
+		values, err = androidRegistrationValues(authorizationEntity, creds, opts.Android, opts.Installation, false)
+		if err != nil {
+			return err
+		}
+		values.Set("X-delete", "1")
+		endpoint = "https://android.apis.google.com/c2dm/register3"
+		post = postAndroidRequest
+	} else {
+		setGCMAppID(values, appID)
+		values.Set("scope", "GCM")
+		values.Set("X-scope", "GCM")
+		values.Set("device", fmt.Sprint(creds.AndroidID))
+		values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
+		values.Set("sender", authorizationEntity)
+		values.Set("delete", "true")
+	}
+	res, err := post(ctx, endpoint, strings.NewReader(values.Encode()), func(header *http.Header) {
 		header.Set("Content-Type", "application/x-www-form-urlencoded")
 		header.Set("Authorization", fmt.Sprintf("AidLogin %d:%d", creds.AndroidID, creds.SecurityToken))
 	})
@@ -115,31 +148,64 @@ func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCre
 		return errors.Wrap(err, "failed to unregister with GCM")
 	}
 
-	response, err := parseGCMResponse(res)
+	response, err := parseGCMResponse(res, android)
 	if err != nil {
 		return errors.Wrap(err, "read GCM unregister response")
 	}
-	if response.Get("token") == "" && response.Get("deleted") != appID {
+	if android {
+		if !response.Has("deleted") {
+			return errors.New("Android FCM unregister response missing confirmation")
+		}
+	} else if response.Get("token") == "" && response.Get("deleted") != appID {
 		return errors.New("GCM unregister response missing confirmation")
 	}
 
 	return nil
 }
 
-func parseGCMResponse(res *http.Response) (url.Values, error) {
-	defer closeResponse(res)
+func parseGCMResponse(res *http.Response, android bool) (url.Values, error) {
+	if android {
+		defer res.Body.Close()
+	} else {
+		defer closeResponse(res)
+	}
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected HTTP status %d", res.StatusCode)
 	}
-	data, err := io.ReadAll(res.Body)
+	var body io.Reader = res.Body
+	if android {
+		body = io.LimitReader(body, 65537)
+	}
+	data, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
 	}
-	values, err := url.ParseQuery(string(data))
-	if err != nil {
-		return nil, err
+	if android && len(data) > 65536 {
+		return nil, errors.New("GCM response too large")
+	}
+	var values url.Values
+	if android {
+		values = url.Values{}
+		for _, line := range strings.Split(string(data), "\n") {
+			if line == "" {
+				continue
+			}
+			key, value, found := strings.Cut(line, "=")
+			if !found || key == "" {
+				return nil, errors.New("invalid Android FCM response")
+			}
+			values.Set(key, value)
+		}
+	} else {
+		values, err = url.ParseQuery(string(data))
+		if err != nil {
+			return nil, err
+		}
 	}
 	if message := values.Get("Error"); message != "" {
+		if android && (len(message) > 128 || strings.Trim(message, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != "") {
+			return nil, errors.New("GCM response contains an invalid error code")
+		}
 		return nil, GCMError(message)
 	}
 	return values, nil
