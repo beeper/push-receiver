@@ -42,24 +42,8 @@ message ChromeBuildProto {
   optional Channel channel = 3;
 }
 
-message AndroidBuildProto {
-  optional string fingerprint = 1;
-  optional string hardware = 2;
-  optional string brand = 3;
-  optional string bootloader = 5;
-  optional uint64 timestamp = 7;
-  optional uint64 gms_version = 8;
-  optional string device = 9;
-  optional uint32 sdk_version = 10;
-  optional string model = 11;
-  optional string manufacturer = 12;
-  optional string product = 13;
-  optional string security_patch = 19;
-}
-
 // Information sent by the device in a "checkin" request.
 message AndroidCheckinProto {
-  optional AndroidBuildProto build = 1;
   // Miliseconds since the Unix epoch of the device's last successful checkin.
   optional int64 last_checkin_msec = 2;
 

@@ -17,5 +17,4 @@ type FCMCredentials struct {
 type GCMCredentials struct {
 	AndroidID     uint64 `json:"androidId"`
 	SecurityToken uint64 `json:"securityToken"`
-	VersionInfo   string `json:"versionInfo,omitempty"`
 }
