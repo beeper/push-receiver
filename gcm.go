@@ -40,13 +40,7 @@ func NewGCMAppID(authorizationEntity string) string {
 	if _, err := strconv.ParseUint(authorizationEntity, 10, 64); err != nil {
 		return "wp:" + strings.ToUpper(uuid.New().String())
 	}
-	id := uuid.New()
-	var encoded [32]byte
-	for i, b := range id {
-		encoded[i*2] = 'a' + b>>4
-		encoded[i*2+1] = 'a' + b&15
-	}
-	return string(encoded[:])
+	return uuid.NewString()
 }
 
 func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, opts *GCMRegistrationOpts) (*FCMCredentials, error) {
