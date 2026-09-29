@@ -25,6 +25,7 @@ type GCMRegistrationOpts struct {
 	AppID      string
 	InstanceID string
 	Expiry     time.Duration
+	LegacyIID  *LegacyIIDConfig
 }
 
 func setGCMAppID(values url.Values, appID string) {
@@ -53,25 +54,34 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 		appID = NewGCMAppID(authorizationEntity)
 	}
 
-	if opts != nil && opts.InstanceID != "" {
-		values.Set("appid", opts.InstanceID)
+	if opts != nil && opts.LegacyIID != nil {
+		var err error
+		values, err = legacyIIDRegistrationValues(authorizationEntity, creds, opts)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if opts != nil && opts.InstanceID != "" {
+			values.Set("appid", opts.InstanceID)
+		}
+		if opts != nil && opts.Expiry != 0 {
+			values.Set("ttl", strconv.Itoa(int(opts.Expiry.Seconds())))
+		}
+		setGCMAppID(values, appID)
+		values.Set("scope", "GCM")
+		values.Set("X-scope", "GCM")
+		values.Set("device", fmt.Sprint(creds.AndroidID))
+		values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
+		values.Set("sender", authorizationEntity)
 	}
-
-	if opts != nil && opts.Expiry != 0 {
-		ttl := strconv.Itoa(int(opts.Expiry.Seconds()))
-		values.Set("ttl", ttl)
-	}
-
-	setGCMAppID(values, appID)
-	values.Set("scope", "GCM")
-	values.Set("X-scope", "GCM")
-	values.Set("device", fmt.Sprint(creds.AndroidID))
-	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
-	values.Set("sender", authorizationEntity)
 
 	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
 		header.Set("Content-Type", "application/x-www-form-urlencoded")
 		header.Set("Authorization", fmt.Sprintf("AidLogin %d:%d", creds.AndroidID, creds.SecurityToken))
+		if opts != nil && opts.LegacyIID != nil {
+			header.Set("app", opts.LegacyIID.PackageName)
+			header.Set("User-Agent", fmt.Sprintf("Android-GCM/1.5 (%s %s)", opts.LegacyIID.Device, opts.LegacyIID.BuildID))
+		}
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "request GCM register")
@@ -92,18 +102,40 @@ func RegisterGCM(ctx context.Context, authorizationEntity string, creds GCMCrede
 	}, nil
 }
 
-func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, appID string) error {
+func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCredentials, appID string, options ...*GCMRegistrationOpts) error {
+	if len(options) > 1 {
+		return errors.New("multiple GCM registration options")
+	}
+	var opts *GCMRegistrationOpts
+	if len(options) == 1 {
+		opts = options[0]
+	}
 	values := url.Values{}
-	setGCMAppID(values, appID)
-	values.Set("scope", "GCM")
-	values.Set("X-scope", "GCM")
-	values.Set("device", fmt.Sprint(creds.AndroidID))
-	values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
-	values.Set("sender", authorizationEntity)
-	values.Set("delete", "true")
+	deletedAppID := appID
+	if opts != nil && opts.LegacyIID != nil {
+		var err error
+		values, err = legacyIIDRegistrationValues(authorizationEntity, creds, opts)
+		if err != nil {
+			return err
+		}
+		values.Set("delete", "1")
+		deletedAppID = opts.LegacyIID.PackageName
+	} else {
+		setGCMAppID(values, appID)
+		values.Set("scope", "GCM")
+		values.Set("X-scope", "GCM")
+		values.Set("device", fmt.Sprint(creds.AndroidID))
+		values.Set("gmsv", strings.Split(chromeVersion, ".")[0])
+		values.Set("sender", authorizationEntity)
+		values.Set("delete", "true")
+	}
 	res, err := postRequest(ctx, registerURL, strings.NewReader(values.Encode()), func(header *http.Header) {
 		header.Set("Content-Type", "application/x-www-form-urlencoded")
 		header.Set("Authorization", fmt.Sprintf("AidLogin %d:%d", creds.AndroidID, creds.SecurityToken))
+		if opts != nil && opts.LegacyIID != nil {
+			header.Set("app", opts.LegacyIID.PackageName)
+			header.Set("User-Agent", fmt.Sprintf("Android-GCM/1.5 (%s %s)", opts.LegacyIID.Device, opts.LegacyIID.BuildID))
+		}
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unregister with GCM")
@@ -113,7 +145,7 @@ func UnregisterGCM(ctx context.Context, authorizationEntity string, creds GCMCre
 	if err != nil {
 		return errors.Wrap(err, "read GCM unregister response")
 	}
-	if response.Get("token") == "" && response.Get("deleted") != appID {
+	if response.Get("token") == "" && response.Get("deleted") != deletedAppID {
 		return errors.New("GCM unregister response missing confirmation")
 	}
 
